@@ -64,6 +64,7 @@ class IncomingSmsReceiver : BroadcastReceiver() {
     private fun processIncomingSms(context: Context, smsList: List<SmsMessage>) {
         val messageMap = smsList.first().toMap()
         smsList.forEachIndexed { index, smsMessage ->
+            Log.d("SMS", "--------------------------------"+smsMessage)
             if (index > 0) {
                 messageMap[MESSAGE_BODY] = (messageMap[MESSAGE_BODY] as String)
                     .plus(smsMessage.messageBody.trim())
