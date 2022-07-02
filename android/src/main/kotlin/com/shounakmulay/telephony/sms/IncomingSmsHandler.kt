@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Process
 import android.provider.Telephony
 import android.telephony.SmsMessage
+import android.util.Log
 import com.shounakmulay.telephony.utils.Constants
 import com.shounakmulay.telephony.utils.Constants.HANDLE
 import com.shounakmulay.telephony.utils.Constants.HANDLE_BACKGROUND_MESSAGE
@@ -43,9 +44,13 @@ class IncomingSmsReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
+        Log.d("PAL-SMS", "--------------------------------onReceive")
+
         ContextHolder.applicationContext = context.applicationContext
         val smsList = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        Log.d("PAL-SMS", "--------------------------------onReceive$smsList")
         val messagesGroupedByOriginatingAddress = smsList.groupBy { it.originatingAddress }
+        Log.d("PAL-SMS", "--------------------------------onReceive$messagesGroupedByOriginatingAddress")
         messagesGroupedByOriginatingAddress.forEach { group ->
             processIncomingSms(context, group.value)
         }
@@ -62,9 +67,10 @@ class IncomingSmsReceiver : BroadcastReceiver() {
      *
      */
     private fun processIncomingSms(context: Context, smsList: List<SmsMessage>) {
+        Log.d("PAL-SMS", "--------------------------------processIncomingSms")
         val messageMap = smsList.first().toMap()
         smsList.forEachIndexed { index, smsMessage ->
-            Log.d("SMS", "--------------------------------"+smsMessage)
+            Log.d("PAL-SMS", "--------------------------------processIncomingSms"+smsMessage)
             if (index > 0) {
                 messageMap[MESSAGE_BODY] = (messageMap[MESSAGE_BODY] as String)
                     .plus(smsMessage.messageBody.trim())
@@ -86,6 +92,7 @@ class IncomingSmsReceiver : BroadcastReceiver() {
     }
 
     private fun processInBackground(context: Context, sms: HashMap<String, Any?>) {
+        Log.d("PAL-SMS", "--------------------------------processIncomingSms")
         IncomingSmsHandler.apply {
             if (!isIsolateRunning.get()) {
                 initialize(context)
@@ -208,6 +215,8 @@ object IncomingSmsHandler : MethodChannel.MethodCallHandler {
      * Should be called before invoking any other background methods.
      */
     internal fun initialize(context: Context) {
+        Log.d("PAL-SMS", "--------------------------------initialize(context: Context)")
+
         val flutterInjector = FlutterInjector.instance()
         flutterLoader = flutterInjector.flutterLoader()
         flutterLoader.startInitialization(context)
@@ -215,6 +224,8 @@ object IncomingSmsHandler : MethodChannel.MethodCallHandler {
     }
 
     fun setBackgroundMessageHandle(context: Context, handle: Long) {
+        Log.d("PAL-SMS", "--------------------------------setBackgroundMessageHandle")
+
         backgroundMessageHandle = handle
 
         // Store background message handle in shared preferences so it can be retrieved
@@ -226,6 +237,8 @@ object IncomingSmsHandler : MethodChannel.MethodCallHandler {
     }
 
     fun setBackgroundSetupHandle(context: Context, setupBackgroundHandle: Long) {
+        Log.d("PAL-SMS", "--------------------------------setBackgroundSetupHandle")
+
         // Store background setup handle in shared preferences so it can be retrieved
         // by other application instances.
         val preferences =
@@ -235,12 +248,16 @@ object IncomingSmsHandler : MethodChannel.MethodCallHandler {
     }
 
     private fun getBackgroundMessageHandle(context: Context): Long {
+        Log.d("PAL-SMS", "--------------------------------getBackgroundMessageHandle")
+
         return context
             .getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
             .getLong(SHARED_PREFS_BACKGROUND_MESSAGE_HANDLE, 0)
     }
 
     fun isApplicationForeground(context: Context): Boolean {
+        Log.d("PAL-SMS", "--------------------------------isApplicationForeground")
+
         val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager.isKeyguardLocked) {
             return false
@@ -260,6 +277,8 @@ object IncomingSmsHandler : MethodChannel.MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        Log.d("PAL-SMS", "--------------------------------onMethodCall")
+
         if (SmsAction.fromMethod(call.method) == SmsAction.BACKGROUND_SERVICE_INITIALIZED) {
             onChannelInitialized(
                 ContextHolder.applicationContext
